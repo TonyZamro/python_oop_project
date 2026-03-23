@@ -91,8 +91,11 @@ aa_mol_weights={'A':89.09,'C':121.15,'D':133.1,'E':147.13,'F':165.19,
 
 class Seq:
 
-    def __init__(self,sequence,gene,species):
+    def __init__(self,sequence,gene,species,kmers=[]):
         self.sequence=sequence
+        self.sequence = self.sequence.upper()
+        self.sequence = self.sequence.strip()
+        self.kmers = kmers
         self.gene=gene
         self.species=species
 
@@ -102,26 +105,49 @@ class Seq:
     def print_record(self):
         print(self.species + " " + self.gene + ": " + self.sequence)
 
-    #def make_kmers(self, k=3):
+    def make_kmers(self, k=3):
+        for i in range(len(self.sequence)):
+            self.kmers.append(self.sequence[i:i+3])
 
-    #def fasta(self):
-    
+    def fasta(self):
+        with open("seq.txt",'w') as fasta:
+            fasta.write(f">{self.gene} \n")
+            fasta.write(self.sequence)
 class DNA(Seq):
 
     def __init__(self,sequence,gene,species,geneid,**kwargs):
         super().__init__(sequence,gene,species)
         self.sequence=sequence
         self.geneid=geneid
- 
+        re.sub('[^ATGCU]','N',self.sequence)
     def analysis(self):
         gc=len(re.findall('G',self.sequence) + re.findall('C',self.sequence))
         return gc
 
-#    def print_info(self):
+    def print_info(self):
+        print(" " + self.geneid + self.species + " " + self.gene + ": " + self.sequence)
 
-#    def reverse_complement(self):
+    def reverse_complement(self):
+        self._reverse_strand = ""
+        for i in self.sequence[::-1]:
+            if i == "T":
+                self._reverse_strand += "A"
+            elif i == "A":
+                self._reverse_strand += "T"
+            elif i == "G":
+                self._reverse_strand += "C"
+            elif i == "C":
+                self._reverse_strand += "G"
+        return self._reverse_strand
 
-#    def six_frames(self):
+    def six_frames(self):
+        self._frames = []
+        for i in range(3):
+            self._frames.append(self.sequence[i:len(self.sequence)])
+        for i in range(3):
+            self._frames.append(self._reverse_strand[i:len(self._reverse_strand)])
+        return self._frames
+        
 
 """
 class RNA(DNA):
