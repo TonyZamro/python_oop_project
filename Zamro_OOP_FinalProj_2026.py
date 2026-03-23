@@ -119,7 +119,7 @@ class DNA(Seq):
         super().__init__(sequence,gene,species)
         self.sequence=sequence
         self.geneid=geneid
-        re.sub('[^ATGCU]','N',self.sequence)
+        self.sequence = re.sub('[^ATGCU]','N',self.sequence)
     def analysis(self):
         gc=len(re.findall('G',self.sequence) + re.findall('C',self.sequence))
         return gc
@@ -128,17 +128,17 @@ class DNA(Seq):
         print(" " + self.geneid + self.species + " " + self.gene + ": " + self.sequence)
 
     def reverse_complement(self):
-        self._reverse_strand = ""
+        _reverse_strand = ""
         for i in self.sequence[::-1]:
             if i == "T":
-                self._reverse_strand += "A"
+                _reverse_strand += "A"
             elif i == "A":
-                self._reverse_strand += "T"
+                _reverse_strand += "T"
             elif i == "G":
-                self._reverse_strand += "C"
+                _reverse_strand += "C"
             elif i == "C":
-                self._reverse_strand += "G"
-        return self._reverse_strand
+                _reverse_strand += "G"
+        return _reverse_strand
 
     def six_frames(self):
         self._frames = []
@@ -149,24 +149,47 @@ class DNA(Seq):
         return self._frames
         
 
-"""
+
 class RNA(DNA):
 
-    #def __init__(self):
-        
-    #def make_codons(self):
- 
-    #def translate(self):
+    def __init__(self,sequence,codons=[]):
+        super().__init__(sequence)
+        self.sequence = sequence
+        self.codons = codons
+        for i in self.sequence:
+            if i == 'T':
+                self.sequence = self.sequence.replace('T','U')
+    def make_codons(self):
+        for i in range(0,len(self.sequence),3):
+            self.codons.append(self.sequence[i:i+3])
+        return self.codons
+    def translate(self):
+        _translated_protein = ""
+        for i in self.codons:
+            _amino_acid = standard_code[i]
+            _translated_protein += _amino_acid
+        return _translated_protein
 
 class Protein(Seq):
 
-    #def __init__:
+    def __init__(self,sequence):
+        super().__init__(sequence)
+        self.sequence = re.sub("[^A-Z]","X",self.sequence)
 
-    #def total_hydro(self):
 
-    #def mol_weight(self):
+    def total_hydro(self):
+        _total_hydrophobicity_score = 0
+        for i in self.sequence:
+            _hydrophobicity_residue_score = kyte_doolittle[i]
+            _total_hydrophobicity_score += _hydrophobicity_residue_score
+        return _hydrophobicity_residue_score
+    def mol_weight(self):
+        _total_mol_weight_score = 0
+        for i in self.sequence:
+            _mol_weight_residue_score = aa_mol_weights[i]
+            _total_mol_weight_score +=  _mol_weight_residue_score
+        return _total_mol_weight_score
 
-"""
     
 
 x=DNA("G","tmp","m",000)
