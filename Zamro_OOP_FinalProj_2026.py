@@ -106,20 +106,21 @@ class Seq:
         print(self.species + " " + self.gene + ": " + self.sequence)
 
     def make_kmers(self, k=3):
+        self.kmers.clear()
         for i in range(len(self.sequence)):
-            self.kmers.append(self.sequence[i:i+3])
+            if len(self.sequence[i:i+k]) == k:
+                self.kmers.append(self.sequence[i:i+k])
 
     def fasta(self):
         with open("seq.txt",'w') as fasta:
-            fasta.write(f">{self.gene} \n")
+            fasta.write(f"> {self.species} {self.gene} \n")
             fasta.write(self.sequence)
 class DNA(Seq):
 
     def __init__(self,sequence,gene,species,geneid,**kwargs):
         super().__init__(sequence,gene,species)
-        self.sequence=sequence
         self.geneid=geneid
-        self.sequence = re.sub('[^ATGCU]','N',self.sequence)
+        self.sequence = re.sub("[^ATGCU]","N",self.sequence)
     def analysis(self):
         gc=len(re.findall('G',self.sequence) + re.findall('C',self.sequence))
         return gc
@@ -128,17 +129,19 @@ class DNA(Seq):
         print(" " + self.geneid + self.species + " " + self.gene + ": " + self.sequence)
 
     def reverse_complement(self):
-        _reverse_strand = ""
+        self._reverse_strand = ""
         for i in self.sequence[::-1]:
             if i == "T":
-                _reverse_strand += "A"
+                self._reverse_strand += "A"
             elif i == "A":
-                _reverse_strand += "T"
+                self._reverse_strand += "T"
             elif i == "G":
-                _reverse_strand += "C"
+                self._reverse_strand += "C"
             elif i == "C":
-                _reverse_strand += "G"
-        return _reverse_strand
+                self._reverse_strand += "G"
+            else:
+                self._reverse_strand += "N"
+        return self._reverse_strand
 
     def six_frames(self):
         self._frames = []
@@ -152,37 +155,38 @@ class DNA(Seq):
 
 class RNA(DNA):
 
-    def __init__(self,sequence,codons=[]):
-        super().__init__(sequence)
-        self.sequence = sequence
+    def __init__(self,sequence,gene,species,geneid,codons=[],**kwargs):
+        super().__init__(sequence,gene,species,geneid,**kwargs)
         self.codons = codons
-        for i in self.sequence:
-            if i == 'T':
-                self.sequence = self.sequence.replace('T','U')
+        self.sequence = self.sequence.replace('T','U')
     def make_codons(self):
         for i in range(0,len(self.sequence),3):
-            self.codons.append(self.sequence[i:i+3])
+            if len(self.sequence[i:i+3]) == 3:
+                self.codons.append(self.sequence[i:i+3])
         return self.codons
     def translate(self):
         _translated_protein = ""
         for i in self.codons:
-            _amino_acid = standard_code[i]
-            _translated_protein += _amino_acid
+            if i in standard_code.keys():
+                _amino_acid = standard_code[i]
+                _translated_protein += _amino_acid
+            else:
+                _translated_protein += 'X'
         return _translated_protein
 
 class Protein(Seq):
 
-    def __init__(self,sequence):
-        super().__init__(sequence)
+    def __init__(self,sequence,gene,species,protid):
+        super().__init__(sequence,gene,species)
         self.sequence = re.sub("[^A-Z]","X",self.sequence)
-
+        self.protid = protid
 
     def total_hydro(self):
         _total_hydrophobicity_score = 0
         for i in self.sequence:
             _hydrophobicity_residue_score = kyte_doolittle[i]
             _total_hydrophobicity_score += _hydrophobicity_residue_score
-        return _hydrophobicity_residue_score
+        return _total_hydrophobicity_score
     def mol_weight(self):
         _total_mol_weight_score = 0
         for i in self.sequence:
@@ -192,9 +196,41 @@ class Protein(Seq):
 
     
 
-x=DNA("G","tmp","m",000)
+# s = Seq("  gATATAGGACctttaGGACCAC   ","my_gene","H.sapiens")
+# s.print_record()
+# s.make_kmers(5)
+# a=s.kmers
+# print(a)
 
+# d = DNA("   -tcaaaGCGGATCTTCCCaaatga\n","my_dna","D.terebrans","AX5667")
+# d.print_info()
+# print(d)
+# print(d.analysis())
+# print(d.fasta())
+# rc = d.reverse_complement()
+# print(rc)
 
+# all_6_frames = d.six_frames()
+# print(all_6_frames)
 
-
-
+# r = RNA("   g?ATATAGGAcctttaGGACCAC  ","my_rna","G.gallus","R5990999")
+# r.print_info()
+# print(r)
+# r.make_codons()
+# print(r.codons)
+# print(r.translate())
+# print(r.fasta())
+p = Protein("  WCVALKKKCCYhhhhh-yyyrsQ\t ", "my_prot", "D.melanogaster","56008009")
+print(p)
+print(p.kmers)
+print(p.fasta())
+p.make_kmers(5)
+print(p.kmers)
+testp = Protein('VIKING','test','unknown','999')
+print(testp)
+testp.make_kmers(2)
+print(testp.kmers)
+x = testp.total_hydro()
+print(x)
+m=testp.mol_weight()
+print(m)
