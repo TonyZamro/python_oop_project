@@ -1,2 +1,2 @@
-> D.melanogaster my_prot 
+> D.melanogaster;my_prot 
 WCVALKKKCCYHHHHHXYYYRSQ

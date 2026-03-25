@@ -112,9 +112,22 @@ class Seq:
                 self.kmers.append(self.sequence[i:i+k])
 
     def fasta(self):
-        with open("seq.txt",'w') as fasta:
-            fasta.write(f"> {self.species} {self.gene} \n")
-            fasta.write(self.sequence)
+        with open("seq.txt",'w') as fastaw:
+            fastaw.write(f"> {self.species};{self.gene} \n")
+            fastaw.write(self.sequence)
+    def fasta_parser(self,file):
+        sequence_list = []
+        fasta_hash = {}
+        with open(file,'r') as fastar:
+            for i in fastar.readlines():
+                if i.startswith('>'):
+                    species_gene_split = i[1:].split(';')
+                    cleaned_labels = [i.strip() for i in species_gene_split]
+                    print(cleaned_labels)
+                else:
+                    fasta_hash[i] = cleaned_labels
+                    sequence_list.append(i)
+        return fasta_hash
 class DNA(Seq):
 
     def __init__(self,sequence,gene,species,geneid,**kwargs):
@@ -177,6 +190,7 @@ class RNA(DNA):
 class Protein(Seq):
 
     def __init__(self,sequence,gene,species,protid):
+        self._total_mol_weight_score = 0
         super().__init__(sequence,gene,species)
         self.sequence = re.sub("[^A-Z]","X",self.sequence)
         self.protid = protid
@@ -188,11 +202,19 @@ class Protein(Seq):
             _total_hydrophobicity_score += _hydrophobicity_residue_score
         return _total_hydrophobicity_score
     def mol_weight(self):
-        _total_mol_weight_score = 0
+        self._total_mol_weight_score = 0
         for i in self.sequence:
             _mol_weight_residue_score = aa_mol_weights[i]
-            _total_mol_weight_score +=  _mol_weight_residue_score
-        return _total_mol_weight_score
+            self._total_mol_weight_score +=  _mol_weight_residue_score
+        return self._total_mol_weight_score
+    def __gt__(self, other):
+        try:
+            if self._total_mol_weight_score > other._total_mol_weight_score:
+                return f"{self.sequence} is larger than {other.sequence}"
+            else:
+                return f"{other.sequence} is larger than {self.sequence}"
+        except AttributeError as e:
+            return "An attribute error has occured please make sure that you called the molecular weight function first before comparing sequence weights"
 
     
 
@@ -213,14 +235,16 @@ class Protein(Seq):
 # all_6_frames = d.six_frames()
 # print(all_6_frames)
 
-# r = RNA("   g?ATATAGGAcctttaGGACCAC  ","my_rna","G.gallus","R5990999")
-# r.print_info()
-# print(r)
-# r.make_codons()
-# print(r.codons)
-# print(r.translate())
+r = RNA("   g?ATATAGGAcctttaGGACCAC  ","my_rna","G.gallus","R5990999")
+r.print_info()
+print(r)
+r.make_codons()
+print(r.codons)
+print(r.translate())
 # print(r.fasta())
 p = Protein("  WCVALKKKCCYhhhhh-yyyrsQ\t ", "my_prot", "D.melanogaster","56008009")
+x_p = p.mol_weight()
+print(x_p)
 print(p)
 print(p.kmers)
 print(p.fasta())
@@ -234,3 +258,6 @@ x = testp.total_hydro()
 print(x)
 m=testp.mol_weight()
 print(m)
+# Before checking you need to get molecular weights first
+print(testp > p)
+print(p.fasta_parser('seq.txt'))
