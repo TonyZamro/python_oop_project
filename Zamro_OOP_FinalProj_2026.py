@@ -115,6 +115,8 @@ class Seq:
         with open("seq.txt",'w') as fastaw:
             fastaw.write(f"> {self.species};{self.gene} \n")
             fastaw.write(self.sequence)
+    #Function to parse fasta file by detecting sequence id using '>', slicing out the symbol and splitting on ';' to store species and gene in its own list
+    # Everything is stored as a dictionary with the sequence as a key and the value as a list with species and gene
     def fasta_parser(self,file):
         sequence_list = []
         fasta_hash = {}
@@ -207,6 +209,8 @@ class Protein(Seq):
             _mol_weight_residue_score = aa_mol_weights[i]
             self._total_mol_weight_score +=  _mol_weight_residue_score
         return self._total_mol_weight_score
+    # Operator overloading on greater than symbol, which is used to compare molecular weights of 2 protein objects
+    # Done in a try/except block to ensure user calls the mol_weight() function, so the program has access to that data for comparison
     def __gt__(self, other):
         try:
             if self._total_mol_weight_score > other._total_mol_weight_score:
