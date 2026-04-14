@@ -91,7 +91,9 @@ aa_mol_weights={'A':89.09,'C':121.15,'D':133.1,'E':147.13,'F':165.19,
 
 class Seq:
 
-    def __init__(self,sequence,gene,species,kmers=[]):
+    def __init__(self,sequence,gene,species,kmers=[],sequence_list = [], fasta_hash = {}):
+        self.sequence_list = sequence_list
+        self.fasta_hash = fasta_hash
         self.sequence=sequence
         self.sequence = self.sequence.upper()
         self.sequence = self.sequence.strip()
@@ -115,11 +117,20 @@ class Seq:
         with open("seq.txt",'w') as fastaw:
             fastaw.write(f"> {self.species};{self.gene} \n")
             fastaw.write(self.sequence)
+        return f"> {self.species} {self.gene} {self.sequence}"
     #Function to parse fasta file by detecting sequence id using '>', slicing out the symbol and splitting on ';' to store species and gene in its own list
     # Everything is stored as a dictionary with the sequence as a key and the value as a list with species and gene
     def fasta_parser(self,file):
-        sequence_list = []
-        fasta_hash = {}
+        """
+        This function parses a fasta file and returns the sequence, species, and associated gene
+        
+        >>> p = Protein("  WCVALKKKCCYhhhhh-yyyrsQ\t ", "my_prot", "D.melanogaster","56008009")
+        >>> print(p)
+        WCVALKKKCCYHHHHHXYYYRSQ
+        >>> print(p.fasta_parser('seq.txt'))
+        ['H.sapiens', 'my_gene']
+        {'GATATAGGACCTTTAGGACCAC': ['H.sapiens', 'my_gene']}
+        """
         with open(file,'r') as fastar:
             for i in fastar.readlines():
                 if i.startswith('>'):
@@ -127,9 +138,9 @@ class Seq:
                     cleaned_labels = [i.strip() for i in species_gene_split]
                     print(cleaned_labels)
                 else:
-                    fasta_hash[i] = cleaned_labels
-                    sequence_list.append(i)
-        return fasta_hash
+                    self.fasta_hash[i] = cleaned_labels
+                    self.sequence_list.append(i)
+        return self.fasta_hash
 class DNA(Seq):
 
     def __init__(self,sequence,gene,species,geneid,**kwargs):
@@ -144,6 +155,16 @@ class DNA(Seq):
         print(" " + self.geneid + self.species + " " + self.gene + ": " + self.sequence)
 
     def reverse_complement(self):
+        """
+        returns the reverse complement of a given DNA sequence
+
+        >>> d=DNA("   -tcaaaGCGGATCTTCCCaaatga\\n","my_dna","D.terebrans","AX5667")
+        >>> print(d)
+        NTCAAAGCGGATCTTCCCAAATGA
+        >>> rc = d.reverse_complement()
+        >>> print(rc)
+        TCATTTGGGAAGATCCGCTTTGAN
+        """
         self._reverse_strand = ""
         for i in self.sequence[::-1]:
             if i == "T":
@@ -204,6 +225,16 @@ class Protein(Seq):
             _total_hydrophobicity_score += _hydrophobicity_residue_score
         return _total_hydrophobicity_score
     def mol_weight(self):
+        """
+        The mol_weight function returns the molecular weight of a given protein sequence
+        >>> p = Protein("  WCVALKKKCCYhhhhh-yyyrsQ\t ", "my_prot", "D.melanogaster","56008009")
+        >>> print(p)
+        WCVALKKKCCYHHHHHXYYYRSQ
+        >>> x_p = p.mol_weight()
+        >>> print(x_p)
+        3269.6600000000008
+        
+        """
         self._total_mol_weight_score = 0
         for i in self.sequence:
             _mol_weight_residue_score = aa_mol_weights[i]
@@ -212,11 +243,24 @@ class Protein(Seq):
     # Operator overloading on greater than symbol, which is used to compare molecular weights of 2 protein objects
     # Done in a try/except block to ensure user calls the mol_weight() function, so the program has access to that data for comparison
     def __gt__(self, other):
+        """
+        This function overloads the greater than operator to compare the molecular weights of two protein sequences,
+        meaning the mol_weight function will have to be called first before doing the comparison
+        
+        >>> p = Protein("  WCVALKKKCCYhhhhh-yyyrsQ\t ", "my_prot", "D.melanogaster","56008009")
+        >>> print(p)
+        WCVALKKKCCYHHHHHXYYYRSQ
+        >>> testp = Protein('VIKING','test','unknown','999')
+        >>> print(testp)
+        VIKING
+        >>> print(testp > p)
+        my_prot is larger than test
+        """
         try:
             if self._total_mol_weight_score > other._total_mol_weight_score:
-                return f"{self.sequence} is larger than {other.sequence}"
+                return f"{self.gene} is larger than {other.gene}"
             else:
-                return f"{other.sequence} is larger than {self.sequence}"
+                return f"{other.gene} is larger than {self.gene}"
         except AttributeError as e:
             return "An attribute error has occured please make sure that you called the molecular weight function first before comparing sequence weights"
 
@@ -225,6 +269,7 @@ class Protein(Seq):
 # s = Seq("  gATATAGGACctttaGGACCAC   ","my_gene","H.sapiens")
 # s.print_record()
 # s.make_kmers(5)
+# print(s.fasta())
 # a=s.kmers
 # print(a)
 
@@ -239,29 +284,34 @@ class Protein(Seq):
 # all_6_frames = d.six_frames()
 # print(all_6_frames)
 
-r = RNA("   g?ATATAGGAcctttaGGACCAC  ","my_rna","G.gallus","R5990999")
-r.print_info()
-print(r)
-r.make_codons()
-print(r.codons)
-print(r.translate())
-# print(r.fasta())
-p = Protein("  WCVALKKKCCYhhhhh-yyyrsQ\t ", "my_prot", "D.melanogaster","56008009")
-x_p = p.mol_weight()
-print(x_p)
-print(p)
-print(p.kmers)
-print(p.fasta())
-p.make_kmers(5)
-print(p.kmers)
-testp = Protein('VIKING','test','unknown','999')
-print(testp)
-testp.make_kmers(2)
-print(testp.kmers)
-x = testp.total_hydro()
-print(x)
-m=testp.mol_weight()
-print(m)
-# Before checking you need to get molecular weights first
-print(testp > p)
-print(p.fasta_parser('seq.txt'))
+# r = RNA("   g?ATATAGGAcctttaGGACCAC  ","my_rna","G.gallus","R5990999")
+# r.print_info()
+# print(r)
+# r.make_codons()
+# print(r.codons)
+# print(r.translate())
+# # print(r.fasta())
+# p = Protein("  WCVALKKKCCYhhhhh-yyyrsQ\t ", "my_prot", "D.melanogaster","56008009")
+# # x_p = p.mol_weight()
+# print(p)
+# # print(x_p)
+# print(p.kmers)
+# print(p.fasta())
+# p.make_kmers(5)
+# print(p.kmers)
+# testp = Protein('VIKING','test','unknown','999')
+# print(testp)
+# testp.make_kmers(2)
+# print(testp.kmers)
+# x = testp.total_hydro()
+# print(x)
+# m=testp.mol_weight()
+# print(m)
+# # Before checking you need to get molecular weights first
+# print(testp > p)
+# print(p.fasta_parser('seq.txt'))
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod(verbose=True)
+    

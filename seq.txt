@@ -1,2 +1,2 @@
-> D.melanogaster;my_prot 
-WCVALKKKCCYHHHHHXYYYRSQ
+> H.sapiens;my_gene 
+GATATAGGACCTTTAGGACCAC
