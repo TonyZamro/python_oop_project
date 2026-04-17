@@ -137,11 +137,20 @@ class Seq:
         print(self.species + " " + self.gene + ": " + self.sequence)
 
     def make_kmers(self, k=3):
-        self.kmers.clear()
-        for i in range(len(self.sequence)):
-            if len(self.sequence[i:i+k]) == k:
-                self.kmers.append(self.sequence[i:i+k])
+        """Splits the sequence into specified k-mers (default 3)
+        >>> seq=Seq("  gATATAGGACctttaGGACCAC  ","my_gene","H.sapiens")
+        >>> seq.make_kmers(2)
+        >>> print(seq.kmers)
+        ['GA', 'AT', 'TA', 'AT', 'TA', 'AG', 'GG', 'GA', 'AC', 'CC', 'CT', 'TT', 'TT', 'TA', 'AG', 'GG', 'GA', 'AC', 'CC', 'CA', 'AC']
+        """
 
+        self.kmers=[]
+        counter = 0
+        while counter+k <= len(self.sequence):
+            self.kmers.append(self.sequence[counter:counter+k])
+            counter+=1
+        return
+         
     def fasta(self):
         with open("seq.txt",'w') as fastaw:
             fastaw.write(f"> {self.species};{self.gene} \n")
