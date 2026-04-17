@@ -295,11 +295,19 @@ class Protein(Seq):
         self.protid = protid
 
     def total_hydro(self):
-        _total_hydrophobicity_score = 0
-        for i in self.sequence:
-            _hydrophobicity_residue_score = kyte_doolittle[i]
-            _total_hydrophobicity_score += _hydrophobicity_residue_score
-        return _total_hydrophobicity_score
+        """Returns the charge of the protein sequence
+
+        Example:
+        >>> seq1 = Protein('VIKING','gene1','unknown',999)
+        >>> print(seq1.total_hydro())
+        5.399999999999999
+        """
+
+        charge = 0
+        for aa in self.sequence:
+            charge += kyte_doolittle[aa]
+        return charge
+         
     def mol_weight(self):
         """
         The mol_weight function returns the molecular weight of a given protein sequence
@@ -341,6 +349,21 @@ class Protein(Seq):
             return "An attribute error has occured please make sure that you called the molecular weight function first before comparing sequence weights"
 
     def __eq__(self, other):
+        """Operation overload for equals, where two Protein sequence molecular weights are compared to see if equal
+        Returns string indicating as such
+
+        Example of different:
+        >>> seq1 = Protein('VIKING','gene1','unknown',999)
+        >>> seq2 = Protein('LKNINKNG','gene2','unknown',900)
+        >>> seq1 == seq2
+        'gene1 has a different molecular weight as gene2'
+
+        Example of same:
+        >>> seq1 = Protein('VIKING','gene1','unknown',999)
+        >>> seq2 = Protein('VIKING','gene2','unknown',900)
+        >>> seq1 == seq2
+        'gene1 has the same molecular weight as gene2'
+        """
         # Operation overload for equals, where two Protein sequence molecular weights are compared to see if equal
         # Returns string indicating as such
         try:
@@ -354,6 +377,12 @@ class Protein(Seq):
             return "Error, ensure that both entries are protein sequences"
 
     def functional_groups(self):
+        """Converts the amino acid into it's general functional group using via dictionary, and returns the functional group sequence
+        Example:
+        >>> seq = Protein('VIKING','test','unknown',999)
+        >>> seq.functional_groups()
+        'NN+NPN\\n(N)on-polar: 4\\n(P)olar Noncharged: 1\\nPolar (+): 1\\nPolar (-): 0\\nUnknown (X): 0'
+        """
         # Converts the amino acid into it's general functional group using 
         # via dictionary, and returns the functional group sequence
         
@@ -363,11 +392,11 @@ class Protein(Seq):
             fun_seq += functional_aminoacid_groups[aa]
 
         # variables to store counts of each functional group
-        non = len(re.findall("N", fun_seq))
-        pol = len(re.findall("P", fun_seq))
-        pos = len(re.findall("\+", fun_seq))
-        neg = len(re.findall("\-", fun_seq))
-        unk = len(re.findall("X", fun_seq))
+        non = len(re.findall(r"N", fun_seq))
+        pol = len(re.findall(r"P", fun_seq))
+        pos = len(re.findall(r"\+", fun_seq))
+        neg = len(re.findall(r"\-", fun_seq))
+        unk = len(re.findall(r"X", fun_seq))
         
         # returns string with functional sequence and counts of each
         fun_seq += f'\n(N)on-polar: {non}\n(P)olar Noncharged: {pol}\nPolar (+): {pos}\nPolar (-): {neg}\nUnknown (X): {unk}'
