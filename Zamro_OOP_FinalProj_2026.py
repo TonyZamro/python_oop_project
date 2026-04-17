@@ -88,6 +88,35 @@ aa_mol_weights={'A':89.09,'C':121.15,'D':133.1,'E':147.13,'F':165.19,
                 'M':149.21,'N':132.12,'P':115.13,'Q':146.15,'R':174.2,
                 'S':105.09,'T':119.12,'V':117.15,'W':204.23,'X':0,'Y':181.19}
 
+functional_aminoacid_groups = {
+            "G": "N",
+            "A": "N",
+            "V": "N",
+            "L": "N",
+            "I": "N",
+            "M": "N",
+            "P": "N",
+            "F": "N",
+            "W": "N",
+
+            "Y": "P",
+            "S": "P",
+            "T": "P",
+            "C": "P",
+            "N": "P",
+            "Q": "P",
+
+            "K": "+",
+            "R": "+",
+            "H": "+",
+
+            "D": "-",
+            "E": "-",
+
+            "X": "X",
+            "*": "*"
+        }
+
 
 class Seq:
 
@@ -210,6 +239,53 @@ class RNA(DNA):
                 _translated_protein += 'X'
         return _translated_protein
 
+    def ORF(self):
+        '''
+        provides all ORF starting with a start codon and ending with a stop codon
+        >>> testRna=RNA("GGAAGUGAAUGCGUAGGA","TsGen","elliot","sillyGene")
+        >>> print(testRna)
+        GGAAGUGAAUGCGUAGGA
+        >>> orf=testRna.ORF()
+        >>> print(orf)
+        AUGCGUAAGUGA
+
+   
+
+        '''
+        self.met_frames=[]
+        stop_codon= ["UAA", "UAG", "UGA"]
+        for n in range(0,len(self.sequence)-2):
+           if self.sequence[n:n+3] == "AUG":
+               for q in range(n+3, len(self.sequence)-2,3):
+                   codon=self.sequence[q:q+3]
+                   if codon in stop_codon:
+                       metcode=self.sequence[n:q+3]
+                       self.met_frames.append(metcode)
+                       break
+        reverse_sequence=self.sequence[::-1]
+        for i in range(0,len(reverse_sequence)-2):
+            if reverse_sequence[i:i+3] == "AUG":
+                for m in range(i + 3,len(reverse_sequence)-2,3):
+                    codon = reverse_sequence[m:m+3]
+                    if codon in stop_codon:
+                        metcode = reverse_sequence[i:m+3]
+                        self.met_frames.append(metcode)
+                        break
+        return(metcode)
+        
+    
+                
+    def __add__(self,other):
+        '''
+        >>> testRna=RNA("GGAAGUGAAUGCGUAGGA","TsGen","elliot","sillyGene")
+        >>> testRna2=RNA("GGAAGUGUUAUGCGUAGGA","TsGen2","elliot","sillyGene2")
+        >>> at=testRna+testRna2
+        >>> print(at)
+        GGAAGUGAAUGCGUAGGAGGAAGUGUUAUGCGUAGGA
+        '''
+        seqjoin=self.sequence+other.sequence
+        return seqjoin
+
 class Protein(Seq):
 
     def __init__(self,sequence,gene,species,protid):
@@ -264,6 +340,38 @@ class Protein(Seq):
         except AttributeError as e:
             return "An attribute error has occured please make sure that you called the molecular weight function first before comparing sequence weights"
 
+    def __eq__(self, other):
+        # Operation overload for equals, where two Protein sequence molecular weights are compared to see if equal
+        # Returns string indicating as such
+        try:
+            if self.mol_weight() == other.mol_weight():
+                return f"{self.gene} has the same molecular weight as {other.gene}"
+            else:
+                return f"{self.gene} has a different molecular weight as {other.gene}"
+
+            
+        except:
+            return "Error, ensure that both entries are protein sequences"
+
+    def functional_groups(self):
+        # Converts the amino acid into it's general functional group using 
+        # via dictionary, and returns the functional group sequence
+        
+
+        fun_seq = "" # empty variable to store functional groups sequence
+        for aa in self.sequence:
+            fun_seq += functional_aminoacid_groups[aa]
+
+        # variables to store counts of each functional group
+        non = len(re.findall("N", fun_seq))
+        pol = len(re.findall("P", fun_seq))
+        pos = len(re.findall("\+", fun_seq))
+        neg = len(re.findall("\-", fun_seq))
+        unk = len(re.findall("X", fun_seq))
+        
+        # returns string with functional sequence and counts of each
+        fun_seq += f'\n(N)on-polar: {non}\n(P)olar Noncharged: {pol}\nPolar (+): {pos}\nPolar (-): {neg}\nUnknown (X): {unk}'
+        return fun_seq
     
 
 # s = Seq("  gATATAGGACctttaGGACCAC   ","my_gene","H.sapiens")
